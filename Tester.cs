@@ -327,6 +327,13 @@ internal partial class Tester
                 }
                 Log.WriteLine($"KW Version: {kwpVersion}");
 
+                // Settle, then drop stray bytes, before the first request -- as WakeUpAny and the
+                // EDC15 flash path do. Without it a real EDC15 (038906019CJ) intermittently NAK'd
+                // the first startDiagnosticSession as garbled ("83 06 01 7F 03 13": it read F1 10
+                // as 06 03).
+                Thread.Sleep(300);
+                _kwpCommon.Interface.ClearReceiveBuffer();
+
                 var edc15 = new Edc15VM(_kwpCommon, _controllerAddress);
 
                 // Pass filename through as-is (nullable): on a pure read ReadWriteEeprom falls back to a
