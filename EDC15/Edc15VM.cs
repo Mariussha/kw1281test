@@ -1,4 +1,4 @@
-using BitFab.KW1281Test.Kwp2000;
+﻿using BitFab.KW1281Test.Kwp2000;
 using BitFab.KW1281Test.Logging;
 using System;
 using System.Collections.Generic;
@@ -91,7 +91,8 @@ public class Edc15VM
         if (!isWrite || !string.IsNullOrEmpty(filename))
         {
             eeprom = DumpEepromInSession(kwp2000);
-            var saveTo = filename ?? "EDC15_EEPROM.bin";
+            // Timestamped default so a later dump never overwrites an earlier backup.
+            var saveTo = filename ?? $"EDC15_EEPROM_{DateTime.Now:yyyy-MM-dd_HH-mm-ss}.bin";
             File.WriteAllBytes(saveTo, eeprom);
             Log.WriteLine($"Saved EEPROM to {saveTo}");
         }
