@@ -25,6 +25,11 @@
   </ItemGroup>
 
   <ItemGroup>
+    <!-- The GUI's command table is plain C#, so it is tested here without Windows Forms. -->
+    <Compile Include="..\Gui\Commands.cs" Link="Gui\Commands.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
     <None Update="Cluster\06032.bin">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>

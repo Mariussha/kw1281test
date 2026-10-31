@@ -218,24 +218,24 @@ internal partial class Tester
         {
             while (true)
             {
-                if (Console.KeyAvailable)
+                if (ConsoleIo.KeyAvailable)
                 {
-                    var keyInfo = Console.ReadKey(intercept: true);
-                    if (keyInfo.Key == ConsoleKey.UpArrow)
+                    var key = ConsoleIo.ReadKey();
+                    if (key == ConsoleKey.UpArrow)
                     {
                         if (groupNumber < 255)
                         {
                             groupNumber++;
                         }
                     }
-                    else if (keyInfo.Key == ConsoleKey.DownArrow)
+                    else if (key == ConsoleKey.DownArrow)
                     {
                         if (groupNumber > 1)
                         {
                             groupNumber--;
                         }
                     }
-                    else if (keyInfo.Key == ConsoleKey.Q)
+                    else if (key == ConsoleKey.Q)
                     {
                         break;
                     }
@@ -253,7 +253,7 @@ internal partial class Tester
 
                 if (values.Count == 0)
                 {
-                    GroupReadOverlay($"Group {groupNumber:D3}: Not Available");
+                    ConsoleIo.Overlay($"Group {groupNumber:D3}: Not Available");
                 }
                 else
                 {
@@ -266,7 +266,7 @@ internal partial class Tester
                         }
                         sb.Append(value.ToString());
                     }
-                    GroupReadOverlay($"Group {groupNumber:D3}: {sb}");
+                    ConsoleIo.Overlay($"Group {groupNumber:D3}: {sb}");
                 }
             }
         }
@@ -275,23 +275,6 @@ internal partial class Tester
             d.QuietFrames = prevQuiet;
         }
         Log.WriteLine(LogDest.Console);
-    }
-
-    // In-place console overlay for the interactive group-read / basic-setting loops -- mirrors
-    // KW1281Dialog.Overlay so the KWP2000 commands refresh a single line instead of scrolling a
-    // new line per read. The current line is cleared and rewritten on the console (no newline);
-    // the file log still records one line per refresh.
-    private static void GroupReadOverlay(string message)
-    {
-        (int left, int top) = Console.GetCursorPosition();
-        Console.SetCursorPosition(0, top);
-        if (left > 0)
-        {
-            Log.Write(new string(' ', left), LogDest.Console);
-            Console.SetCursorPosition(0, top);
-        }
-        Log.Write(message, LogDest.Console);
-        Log.WriteLine(message, LogDest.File);
     }
 
     /// <summary>
@@ -600,8 +583,8 @@ internal partial class Tester
             int? firstCode = null;
             var testNumber = 1;
 
-            // Keep the K-line alive on a background thread while we BLOCK on Console.ReadKey.
-            // ReadKey MUST be called directly: a non-blocking Console.KeyAvailable poll that
+            // Keep the K-line alive on a background thread while we BLOCK on ConsoleIo.ReadKey.
+            // ReadKey MUST be called directly: a non-blocking ConsoleIo.KeyAvailable poll that
             // never calls ReadKey would leave the prompt unanswerable.
             using var keepAlive = new BackgroundKeepAlive(
                 () => StartRoutine(d, AdaptRoutineRead, OutputTestSub));
@@ -610,18 +593,18 @@ internal partial class Tester
             {
                 Console.Write(prompt);
                 keepAlive.Resume();              // ping in the background during the wait / dialog
-                ConsoleKeyInfo k;
+                ConsoleKey k;
                 try
                 {
-                    do { k = Console.ReadKey(intercept: true); }
-                    while (k.Key != ConsoleKey.N && k.Key != ConsoleKey.Q);
+                    do { k = ConsoleIo.ReadKey(); }
+                    while (k != ConsoleKey.N && k != ConsoleKey.Q);
                 }
                 finally
                 {
                     keepAlive.Pause();           // stop pinging before we drive the dialog again
                 }
                 Console.WriteLine();
-                return k.Key;
+                return k;
             }
 
             while (true)
@@ -793,10 +776,10 @@ internal partial class Tester
         {
             while (true)
             {
-                if (Console.KeyAvailable)
+                if (ConsoleIo.KeyAvailable)
                 {
-                    var keyInfo = Console.ReadKey(intercept: true);
-                    if (keyInfo.Key == ConsoleKey.UpArrow)
+                    var key = ConsoleIo.ReadKey();
+                    if (key == ConsoleKey.UpArrow)
                     {
                         if (groupNumber < 255)
                         {
@@ -805,7 +788,7 @@ internal partial class Tester
                             entered = TryEnterBasicSettingGroup(d, groupNumber);
                         }
                     }
-                    else if (keyInfo.Key == ConsoleKey.DownArrow)
+                    else if (key == ConsoleKey.DownArrow)
                     {
                         if (groupNumber > 1)
                         {
@@ -814,7 +797,7 @@ internal partial class Tester
                             entered = TryEnterBasicSettingGroup(d, groupNumber);
                         }
                     }
-                    else if (keyInfo.Key == ConsoleKey.Q)
+                    else if (key == ConsoleKey.Q)
                     {
                         break;
                     }
@@ -840,7 +823,7 @@ internal partial class Tester
 
                 if (values.Count == 0)
                 {
-                    GroupReadOverlay($"Basic Setting {groupNumber:D3}: Not Available");
+                    ConsoleIo.Overlay($"Basic Setting {groupNumber:D3}: Not Available");
                 }
                 else
                 {
@@ -853,7 +836,7 @@ internal partial class Tester
                         }
                         sb.Append(value.ToString());
                     }
-                    GroupReadOverlay($"Basic Setting {groupNumber:D3}: {sb}");
+                    ConsoleIo.Overlay($"Basic Setting {groupNumber:D3}: {sb}");
                 }
             }
         }

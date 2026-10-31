@@ -69,11 +69,6 @@ internal partial class Tester
     {
         using KW1281KeepAlive keepAlive = new(_kwp1281);
 
-        // Console.ReadKey() only works on a real console; when stdin is redirected (e.g. a
-        // GUI driving this process over piped streams) it throws/hangs. In that case fall
-        // back to line-based commands over stdin ("N"/"Q") instead of raw keypresses.
-        bool interactive = !Console.IsInputRedirected;
-
         while (true)
         {
             var response = keepAlive.ActuatorTest(0x00);
@@ -84,32 +79,15 @@ internal partial class Tester
             }
             Log.WriteLine($"Actuator Test: {response.ActuatorName}");
 
-            bool quit;
-            if (interactive)
+            // Press any key to advance to next test or press Q to exit
+            Console.Write("Press 'N' to advance to next test or 'Q' to quit");
+            ConsoleKey key;
+            do
             {
-                // Press any key to advance to next test or press Q to exit
-                Console.Write("Press 'N' to advance to next test or 'Q' to quit");
-                ConsoleKeyInfo keyInfo;
-                do
-                {
-                    keyInfo = Console.ReadKey(intercept: true);
-                } while (keyInfo.Key != ConsoleKey.N && keyInfo.Key != ConsoleKey.Q);
-                Console.WriteLine();
-                quit = keyInfo.Key == ConsoleKey.Q;
-            }
-            else
-            {
-                // Marker line so a piped caller knows we're now blocked waiting for a command.
-                Console.WriteLine("WAITING_FOR_INPUT");
-                string? line;
-                do
-                {
-                    line = Console.In.ReadLine();
-                } while (line != null &&
-                         !line.Trim().Equals("N", StringComparison.OrdinalIgnoreCase) &&
-                         !line.Trim().Equals("Q", StringComparison.OrdinalIgnoreCase));
-                quit = line == null || line.Trim().Equals("Q", StringComparison.OrdinalIgnoreCase);
-            }
+                key = ConsoleIo.ReadKey();
+            } while (key != ConsoleKey.N && key != ConsoleKey.Q);
+            Console.WriteLine();
+            var quit = key == ConsoleKey.Q;
 
             if (quit)
             {

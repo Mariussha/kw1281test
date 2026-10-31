@@ -57,10 +57,12 @@ class Program
     void Run(string[] args)
     {
         Console.ForegroundColor = ConsoleColor.Green;
+        // No dramatic pause when piped (e.g. kw1281test-gui), where it just delays every command.
+        var pause = Console.IsOutputRedirected ? 0 : 2000;
         Console.Write("KW1281Test: Yesterday's diagnostics...");
-        Thread.Sleep(2000);
+        Thread.Sleep(pause);
         Console.WriteLine("Today.");
-        Thread.Sleep(2000);
+        Thread.Sleep(pause);
         Console.ResetColor();
         Console.WriteLine();
 
@@ -90,9 +92,16 @@ class Program
         }
 
         string portName = args[0];
-        var baudRate = int.Parse(args[1]);
         int controllerAddress = int.Parse(args[2], NumberStyles.HexNumber);
         var command = args[3];
+
+        if (string.Equals(command, "AutoDetect", StringComparison.OrdinalIgnoreCase))
+        {
+            AutoDetect(portName, args[1], controllerAddress);
+            return;
+        }
+
+        var baudRate = int.Parse(args[1]);
         uint? address = null;
         uint? length = null;
         byte value = 0;
@@ -417,9 +426,9 @@ class Program
                     confirmChecksumCorrection: message =>
                     {
                         Console.Write($"{message} Correct them now? [y/N] ");
-                        var key = Console.ReadKey();
+                        var key = ConsoleIo.ReadKey(intercept: false);
                         Console.WriteLine();
-                        return key.Key == ConsoleKey.Y;
+                        return key == ConsoleKey.Y;
                     },
                     allowUnverifiedChecksum:
                         lf16Args.Contains("unverified") || lf16Args.Contains("noverify"),
@@ -657,6 +666,74 @@ class Program
     }
 
     /// <summary>
+    /// Finds the port and baud rate the controller answers on, trying every port (PORT "auto")
+    /// and/or every common baud rate (BAUD "auto"), each with both wakeup parities. Prints
+    /// "AutoDetect found: PORT=x BAUD=y ..." on success (kw1281test-gui parses that line).
+    /// </summary>
+    private static void AutoDetect(string portArg, string baudArg, int controllerAddress)
+    {
+        var ports = string.Equals(portArg, "auto", StringComparison.OrdinalIgnoreCase)
+            ? SerialPort.GetPortNames()
+            : [portArg];
+        int[] bauds = int.TryParse(baudArg, out var baudRate) ? [baudRate] : [10400, 9600, 4800];
+        Log.WriteLine(
+            $"AutoDetect: controller {controllerAddress:X2}, ports: {string.Join(", ", ports)}, " +
+            $"baud rates: {string.Join(", ", bauds)}");
+
+        foreach (var port in ports)
+        {
+            IInterface @interface;
+            try
+            {
+                @interface = OpenPort(port, bauds[0]);
+            }
+            catch (UnableToProceedException)
+            {
+                continue;
+            }
+
+            using (@interface)
+            {
+                foreach (var baud in bauds)
+                {
+                    @interface.SetBaudRate(baud);
+                    foreach (var evenParity in new[] { false, true })
+                    {
+                        var parity = evenParity ? " (even parity)" : "";
+                        Log.WriteLine($"Trying {port} at {baud} baud{parity}...");
+                        var kwpCommon = new KwpCommon(@interface);
+                        try
+                        {
+                            // One attempt per combination: stop WakeUp's own retries at the first miss.
+                            var protocol = kwpCommon.WakeUp(
+                                (byte)controllerAddress, evenParity, failQuietly: true,
+                                stopRetryingOnSyncByte: _ => true);
+                            if (protocol == 1281)
+                            {
+                                // Reading the ident proves the baud rate, not just a lucky $55.
+                                var kwp1281 = new KW1281Dialog(kwpCommon);
+                                Log.WriteLine($"ECU: {kwp1281.Connect()}");
+                                kwp1281.EndCommunication();
+                            }
+                            Log.WriteLine(
+                                $"AutoDetect found: PORT={port} BAUD={baud} PROTOCOL=KW{protocol}{parity}");
+                            return;
+                        }
+                        catch (Exception)
+                        {
+                            // No (valid) answer on this combination; WakeUp already logged why.
+                        }
+                    }
+                }
+            }
+        }
+
+        Log.WriteLine(
+            "AutoDetect: no controller answered. Check the cable/drivers, the ignition and the " +
+            "controller address.");
+    }
+
+    /// <summary>
     /// Accept a series of string values in the format:
     /// ADDRESS1 VALUE1 [ADDRESS2 VALUE2 ... ADDRESSn VALUEn]
     ///     ADDRESS = EEPROM address in decimal (0-511) or hex ($00-$1FF)
@@ -856,6 +933,10 @@ COMMAND =
         CHANNEL = Channel number (0-99)
         VALUE = Channel value (0-65535)
         LOGIN = Optional login (0-65535)
+    AutoDetect
+        Finds the PORT and BAUD that the controller at ADDRESS answers on.
+        Pass "auto" as PORT (try every serial port) and/or BAUD (try 10400, 9600, 4800),
+        e.g. KW1281Test auto auto 1 AutoDetect
     AutoScan
     BasicSetting GROUP
         GROUP = Group number (0-255)

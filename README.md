@@ -50,6 +50,10 @@ COMMAND =
         CHANNEL = Channel number (0-99)
         VALUE = Channel value (0-65535)
         LOGIN = Optional login (0-65535)
+    AutoDetect
+        Finds the PORT and BAUD that the controller at ADDRESS answers on.
+        Pass "auto" as PORT (try every serial port) and/or BAUD (try 10400, 9600, 4800),
+        e.g. KW1281Test auto auto 1 AutoDetect
     AutoScan
     BasicSetting GROUP
         GROUP = Group number (0-255)
@@ -148,6 +152,28 @@ COMMAND =
     WriteRAM ADDRESS VALUE
         ADDRESS = Address in decimal (e.g. 4361) or hex (e.g. 0x1109)
         VALUE = Value in decimal (e.g. 138) or hex (e.g. 0x8A)
+```
+
+##### Windows GUI
+
+If you'd rather not type commands, `kw1281test-gui.exe` does everything above from a window:
+
+- Pick the **Port** (or type an FTDI cable serial number), **Baud** rate and controller **Address**,
+  or click **Auto detect** to find the port and baud rate the selected controller answers on
+  (ignition on).
+- Pick a **Command**, fill in its fields (files have a Browse button) and click **Run**.
+  Commands that write to a controller ask for confirmation first; **Stop** ends a running command.
+- Interactive commands (GroupRead, BasicSetting, ActuatorTest, prompts) use the
+  **Up / Down / N / Y / Q** buttons or the same keys. Live values show in the box above the log.
+- Dumps and `KW1281Test.log` are saved in the program's folder (**Open folder**). Your last
+  port, baud rate, address and command are remembered.
+
+The GUI runs `kw1281test.exe`, which must be in the same folder.
+Run it from the source folder with `dotnet run --project Gui`, or build both exes into a `publish`
+folder (no .NET install needed to run them) with:
+
+```
+dotnet publish Gui/kw1281test-gui.csproj -c Release -r win-x64 --self-contained -p:PublishSingleFile=true -p:EnableCompressionInSingleFile=true -o publish
 ```
 
 ##### Credits
