@@ -76,7 +76,7 @@ COMMAND =
         START = Start address in decimal (e.g. 0) or hex (e.g. 0x0)
         LENGTH = Number of bytes in decimal (e.g. 2048) or hex (e.g. 0x800)
         FILENAME = Optional filename
-    DumpEeprom FILENAME
+    DumpEeprom [FILENAME]
         (For Airbag/Cluster address only) Dumps the whole EEPROM (size
          auto-detected from ReadIdent).
     DumpMarelliMem START LENGTH [FILENAME]

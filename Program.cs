@@ -128,18 +128,18 @@ class Program
         }
         else if (string.Compare(command, "DumpEeprom", ignoreCase: true) == 0 &&
             (controllerAddress is (int)ControllerAddress.Airbag or (int)ControllerAddress.Cluster) &&
-            args.Length == 5)
+            args.Length <= 5)
         {
-            // Short form for Airbag/Cluster: DumpEeprom FILENAME -> dump the entire EEPROM
-            _filename = args[4];
+            // Short form for Airbag/Cluster: DumpEeprom [FILENAME] -> dump the entire EEPROM
+            _filename = args.ElementAtOrDefault(4);
         }
         else if ((string.Compare(command, "DumpRBxMem", ignoreCase: true) == 0 ||
             string.Compare(command, "DumpRBxMemOdd", ignoreCase: true) == 0) &&
             (controllerAddress is (int)ControllerAddress.Cluster) &&
-            args.Length == 5)
+            args.Length <= 5)
         {
-            // Short form for Cluster: DumpRBxMem/DumpRBxMemOdd FILENAME -> dump the entire EEPROM
-            _filename = args[4];
+            // Short form for Cluster: DumpRBxMem/DumpRBxMemOdd [FILENAME] -> dump the entire EEPROM
+            _filename = args.ElementAtOrDefault(4);
         }
         else if (string.Compare(command, "DumpMarelliMem", ignoreCase: true) == 0 ||
                  string.Compare(command, "DumpEeprom", ignoreCase: true) == 0 ||
@@ -959,7 +959,7 @@ COMMAND =
         START = Start address in decimal (e.g. 0) or hex (e.g. 0x0)
         LENGTH = Number of bytes in decimal (e.g. 2048) or hex (e.g. 0x800)
         FILENAME = Optional filename
-    DumpEeprom FILENAME
+    DumpEeprom [FILENAME]
         (For Airbag/Cluster address only) Dumps the whole EEPROM (size
          auto-detected from ReadIdent).
     DumpMarelliMem START LENGTH [FILENAME]
