@@ -769,24 +769,24 @@ internal class KW1281Dialog : IKW1281Dialog
         Log.WriteLine("[Up arrow | Down arrow | Q to quit]", LogDest.Console);
         while (true)
         {
-            if (Console.KeyAvailable)
+            if (ConsoleIo.KeyAvailable)
             {
-                var keyInfo = Console.ReadKey(intercept: true);
-                if (keyInfo.Key == ConsoleKey.UpArrow)
+                var key = ConsoleIo.ReadKey();
+                if (key == ConsoleKey.UpArrow)
                 {
                     if (groupNumber < 255)
                     {
                         groupNumber++;
                     }
                 }
-                else if (keyInfo.Key == ConsoleKey.DownArrow)
+                else if (key == ConsoleKey.DownArrow)
                 {
                     if (groupNumber > 1)
                     {
                         groupNumber--;
                     }
                 }
-                else if (keyInfo.Key == ConsoleKey.Q)
+                else if (key == ConsoleKey.Q)
                 {
                     break;
                 }
@@ -802,7 +802,7 @@ internal class KW1281Dialog : IKW1281Dialog
             var responseBlock = ReceiveBlock();
             if (responseBlock is NakBlock)
             {
-                Overlay($"Group {groupNumber:D3}: Not Available");
+                ConsoleIo.Overlay($"Group {groupNumber:D3}: Not Available");
             }
             else if (responseBlock is GroupReadResponseWithTextBlock groupReadResponseWithText)
             {
@@ -811,7 +811,7 @@ internal class KW1281Dialog : IKW1281Dialog
             }
             else if (responseBlock is GroupReadResponseBlock groupReading)
             {
-                Overlay($"Group {groupNumber:D3}: {groupReading}");
+                ConsoleIo.Overlay($"Group {groupNumber:D3}: {groupReading}");
             }
             else if (responseBlock is RawDataReadResponseBlock rawData)
             {
@@ -820,11 +820,11 @@ internal class KW1281Dialog : IKW1281Dialog
                     var sb = new StringBuilder($"Group {groupNumber:D3}: ");
                     sb.Append(textBlock.GetText(rawData.Body[0]));
                     sb.Append(Utils.DumpDecimal(rawData.Body.Skip(1)));
-                    Overlay(sb.ToString());
+                    ConsoleIo.Overlay(sb.ToString());
                 }
                 else
                 {
-                    Overlay($"Group {groupNumber:D3}: {rawData}");
+                    ConsoleIo.Overlay($"Group {groupNumber:D3}: {rawData}");
                 }
             }
             else
@@ -850,7 +850,7 @@ internal class KW1281Dialog : IKW1281Dialog
         }
 
         Log.WriteLine("[Press a key to quit]", LogDest.Console);
-        while (!Console.KeyAvailable)
+        while (!ConsoleIo.KeyAvailable)
         {
             var bytes = new List<byte>
             {
@@ -866,7 +866,7 @@ internal class KW1281Dialog : IKW1281Dialog
                 return false;
             }
 
-            Overlay(rawDataReadResponse.ToString());
+            ConsoleIo.Overlay(rawDataReadResponse.ToString());
         }
         Log.WriteLine(LogDest.Console);
 
@@ -894,23 +894,6 @@ internal class KW1281Dialog : IKW1281Dialog
             throw new InvalidOperationException($"ReadRomEeprom returned {blocks.Count} blocks instead of 1");
         }
         return blocks[0].Body.ToList();
-    }
-
-    /// <summary>
-    /// Erase the current console line and replace it with message.
-    /// Also writes the message to the log.
-    /// </summary>
-    private static void Overlay(string message)
-    {
-        (int left, int top) = Console.GetCursorPosition();
-        Console.SetCursorPosition(0, top);
-        if (left > 0)
-        {
-            Log.Write(new string(' ', left), LogDest.Console);
-            Console.SetCursorPosition(0, top);
-        }
-        Log.Write(message, LogDest.Console);
-        Log.WriteLine(message, LogDest.File);
     }
 
     private static class TimeInterval

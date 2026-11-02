@@ -1,0 +1,32 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<OutputType>WinExe</OutputType>
+		<TargetFramework>net10.0-windows</TargetFramework>
+		<UseWindowsForms>true</UseWindowsForms>
+		<!-- Lets the GUI also be built (not run) on Linux/macOS. -->
+		<EnableWindowsTargeting>true</EnableWindowsTargeting>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<Nullable>enable</Nullable>
+		<LangVersion>latest</LangVersion>
+		<AssemblyName>kw1281test-gui</AssemblyName>
+		<RootNamespace>BitFab.KW1281Test.Gui</RootNamespace>
+		<Version>1.0.4</Version>
+		<Copyright>Copyright © 2026 Greg Menounos</Copyright>
+		<Authors>Greg Menounos</Authors>
+		<Company>BitFab</Company>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<!-- The GUI runs kw1281test.exe; this builds it and copies it next to the GUI. -->
+		<ProjectReference Include="..\kw1281test.csproj" />
+	</ItemGroup>
+
+	<!-- Publishing does not copy a working kw1281test.exe, so publish it next to the GUI as a
+	     single-file exe (like a kw1281test release). Needs a runtime, e.g. -r win-x64. -->
+	<Target Name="PublishCliAlongside" AfterTargets="Publish">
+		<MSBuild Projects="..\kw1281test.csproj" Targets="Publish"
+		         Properties="Configuration=$(Configuration);RuntimeIdentifier=$(RuntimeIdentifier);SelfContained=true;PublishSingleFile=true;PublishDir=$(PublishDir)" />
+	</Target>
+
+</Project>
